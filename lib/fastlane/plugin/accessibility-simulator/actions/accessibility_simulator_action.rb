@@ -22,7 +22,7 @@ module Fastlane
 
       def self.details
         # Optional:
-        "This plugin will run your tests on a simulator created with specific accessibiltiy settings. It will first search for any existing simulators."
+        "This plugin will run your tests on a simulator created with specific accessibility settings. It will first search for any existing simulators."
       end
 
       def self.available_options
