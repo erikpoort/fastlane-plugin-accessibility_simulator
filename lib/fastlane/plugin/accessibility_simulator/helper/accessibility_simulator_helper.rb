@@ -8,23 +8,42 @@ module Fastlane
       def self.plist
         base_dir = Dir.home + "/Library/Developer/CoreSimulator/Devices/"
 
+        preferred_content_size_category = "UICTContentSizeCategoryAccessibilityXXXL"
         has_correct_category = self.list(
             base_dir: base_dir,
             file: "com.apple.UIKit.plist",
             key: "UIPreferredContentSizeCategoryName",
-            value: "UICTContentSizeCategoryXXXL"
+            value: preferred_content_size_category
         )
 
-        has_toggle_on = self.list(
-            base_dir: base_dir,
-            file: "com.apple.preferences-framework.plist",
-            key: "largeTextUsesExtendedRange",
-            value: true
-        )
+        if has_correct_category.empty?
+          `xcrun simctl list devices | grep "(Booted)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})"`
 
-        has_both_correct = has_correct_category & has_toggle_on
+          new_udid = `xcrun simctl create AccessibilityPhone "iPhone X"`.to_s.strip
+          puts new_udid
 
-        puts has_both_correct
+          `xcrun simctl boot #{new_udid}`
+
+          wait_for_uikit = File.join(base_dir, [
+              new_udid,
+              "/data/Library/Preferences/",
+              "com.apple.UIKit.plist"
+          ])
+          until File.exist?(wait_for_uikit)
+            sleep 1
+          end
+          `xcrun simctl shutdown #{new_udid}`
+          self.write_plist(
+              path: File.join(base_dir, [
+                  new_udid,
+                  "/data/Library/Preferences/",
+                  "com.apple.UIKit.plist"
+              ]),
+              key: "UIPreferredContentSizeCategoryName",
+              value: preferred_content_size_category
+          )
+          `xcrun simctl boot #{new_udid}`
+        end
       end
 
       def self.list(options)
@@ -58,11 +77,16 @@ module Fastlane
         `plutil -convert xml1 #{options[:path]}`
         plist = Plist::parse_xml(options[:path])
         if plist[options[:key]] == options[:value]
-          puts "#{options[:key]} is #{options[:value]} for #{options[:path]}"
           return options[:simulator]
         end
-        # plist.save_plist(options[:path])
+        `plutil -convert binary1 #{options[:path]}`
+      end
 
+      def self.write_plist(options)
+        `plutil -convert xml1 #{options[:path]}`
+        plist = Plist::parse_xml(options[:path])
+        plist[options[:key]] = options[:value]
+        plist.save_plist(options[:path])
         `plutil -convert binary1 #{options[:path]}`
       end
     end
