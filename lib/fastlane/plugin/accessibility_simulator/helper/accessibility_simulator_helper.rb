@@ -7,27 +7,38 @@ module Fastlane
     class AccessibilitySimulatorHelper
       def self.plist
         base_dir = Dir.home + "/Library/Developer/CoreSimulator/Devices/"
-        self.list(
+
+        has_correct_category = self.list(
             base_dir: base_dir,
             file: "com.apple.UIKit.plist",
             key: "UIPreferredContentSizeCategoryName",
             value: "UICTContentSizeCategoryXXXL"
         )
-        self.list(
+
+        has_toggle_on = self.list(
             base_dir: base_dir,
             file: "com.apple.preferences-framework.plist",
             key: "largeTextUsesExtendedRange",
             value: true
         )
+
+        has_both_correct = has_correct_category & has_toggle_on
+
+        puts has_both_correct
       end
 
       def self.list(options)
+        udids = []
         Dir.entries(options[:base_dir]).select do |entry|
           unless entry[0] == '.'
             options[:simulator] = entry
-            self.preferences(options)
+            udid = self.preferences(options).to_s.strip
+            unless udid.empty?
+              udids.push(udid)
+            end
           end
         end
+        return udids
       end
 
       def self.preferences(options)
@@ -39,7 +50,7 @@ module Fastlane
 
         if File.exist?(preference_file)
           options[:path] = preference_file
-          self.read_plist(options)
+          return self.read_plist(options)
         end
       end
 
@@ -48,6 +59,7 @@ module Fastlane
         plist = Plist::parse_xml(options[:path])
         if plist[options[:key]] == options[:value]
           puts "#{options[:key]} is #{options[:value]} for #{options[:path]}"
+          return options[:simulator]
         end
         # plist.save_plist(options[:path])
 
