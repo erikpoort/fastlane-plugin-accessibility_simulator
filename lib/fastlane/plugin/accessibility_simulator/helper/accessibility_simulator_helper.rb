@@ -5,7 +5,7 @@ module Fastlane
 
   module Helper
     class AccessibilitySimulatorHelper
-      def self.UIKitPlist
+      def self.plist
         base_dir = Dir.home + "/Library/Developer/CoreSimulator/Devices/"
         self.list(
             base_dir: base_dir,
@@ -48,8 +48,6 @@ module Fastlane
         plist = Plist::parse_xml(options[:path])
         if plist[options[:key]] == options[:value]
           puts "#{options[:key]} is #{options[:value]} for #{options[:path]}"
-        else
-          puts "! #{options[:key]} is not #{options[:value]} but #{plist[options[:key]]} for #{options[:path]}"
         end
         # plist.save_plist(options[:path])
 

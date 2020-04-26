@@ -6,7 +6,7 @@ module Fastlane
     class AccessibilitySimulatorAction < Action
       def self.run(params)
         UI.message("The accessibility_simulator plugin is working!")
-        Helper::AccessibilitySimulatorHelper.UIKitPlist
+        Helper::AccessibilitySimulatorHelper.plist
       end
 
       def self.description
